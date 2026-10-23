@@ -6,6 +6,8 @@ on:
     paths:
       - 'android/**'
       - 'native*'
+      - 'app-updates.js'
+      - 'update-policy.js'
       - '*backup*'
       - 'backup-crypto.js'
       - 'reminder-plan.js'
