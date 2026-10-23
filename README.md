@@ -41,3 +41,31 @@ Do not paste real secrets into chat. No secrets are stored in the repository. Cl
 
 ### Checks
 Run `npm test` for state, authentication, origin, rate-limit, upload, provider-request and recording-controller tests. Provider calls in tests are mocked; they do not spend API credit or send real therapy content. Live provider and Android-device checks require deployment and the user's own environment.
+
+## Android app (v0.4)
+
+`capacitor.config.json` packages the local web assets as **Meanwhile** (`uk.co.nikkiradz.meanwhile`). The app uses the same Cloudflare AI backend; no API key or app password is embedded in the APK.
+
+### Phone permissions and reminders
+In the installed app, tap the initial → **Phone permissions**:
+1. **Enable notifications**, then allow Android's notification prompt.
+2. **Allow precise timing**, then allow Alarms & reminders in Android settings if offered.
+3. **Send a test reminder** and check for it after about ten seconds. Android can delay inexact notifications; Do Not Disturb and battery restrictions can affect banners.
+4. Set the appointment and reminder choices below. The scheduled count confirms how many future reminders the plugin retained.
+
+Microphone permission is requested on the first real recording. The app requests no contacts, location, or broad photo/storage access. File exports use Android's share sheet from app cache. Device backups are disabled for this personal notebook; export notes and download important audio yourself.
+
+Local reminders are scheduled for an eight-week rolling horizon, refreshed on edits and app reopen/resume. They include session-end debrief/preparation, selected practice weekdays, and the configured pre-session lead time. Disabled or changed reminders replace old alarms. The planner uses dated local times across daylight-saving changes; reopen the app after travel/timezone changes. Android force-stop can suppress reminders until reopening. The Local Notifications plugin restores stored alarms after supported device reboots. Native delivery still needs confirmation on the actual phone.
+
+Discreet mode uses generic notification text. Detailed mode can show current talking points; future sessions use generic preparation text rather than recycling today's talking points. Notification taps open preparation/history or start a debrief.
+
+### Move notes from the website
+Website and app storage are separate. Export the JSON from website Settings, then use **Import notes file** in the installed app. The import offers a preview and retains the previous notebook for undo. Recordings are not in the JSON export; download/share them separately. AI sign-in and notification permission remain device-specific. A native Preferences snapshot supplements WebView notebook storage, but it is not encryption or an off-device backup.
+
+### Build and update
+- `npm ci`
+- `npm run android:sync`
+- Open `android/` in Android Studio 2025.2.1+ with Java 21 / Android SDK 36, or run `android/gradlew assembleRelease` from an appropriate Android environment.
+- GitHub Actions → **Build Android app** compiles an unsigned APK on pushes affecting app code. It does not receive signing credentials or AI secrets. Download the `meanwhile-unsigned-apk` artifact, then align/sign it with the retained private update key before installing. An unsigned artifact is not installable.
+
+A signed personal APK can be installed directly without a Play Store listing. Future updates must use the same app ID and signing key and a higher versionCode; keep the private update backup. Do not uninstall the app to update it, as that deletes its local data. APK builds embed a snapshot of the frontend: Cloudflare backend changes apply immediately, but frontend changes need a new app build.

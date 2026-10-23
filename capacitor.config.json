@@ -1,0 +1,8 @@
+{
+  "appId": "uk.co.nikkiradz.meanwhile",
+  "appName": "Meanwhile",
+  "webDir": "public",
+  "server": {"androidScheme": "https"},
+  "android": {"allowMixedContent": false},
+  "plugins": {"LocalNotifications": {"smallIcon": "ic_stat_meanwhile", "iconColor": "#695483"}, "SplashScreen": {"launchShowDuration": 0}}
+}
