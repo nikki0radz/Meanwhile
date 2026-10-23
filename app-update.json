@@ -1,0 +1,9 @@
+{
+  "appId": "uk.co.nikkiradz.meanwhile",
+  "platform": "android",
+  "version": "0.6.0",
+  "build": 6,
+  "url": "https://raw.githubusercontent.com/nikki0radz/Meanwhile/main/downloads/Meanwhile-0.6.0.apk",
+  "sha256": "dc4db483fb0db82cc0afa83cf92f64ade9b6d2275efb859bd5c0730aa2d648c4",
+  "notes": "Adds update notifications, a download button, and Check for updates in Settings."
+}
