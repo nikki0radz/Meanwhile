@@ -7,7 +7,7 @@
     "build": "node scripts/build.cjs",
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
-    "test": "TZ=Europe/London node tests/state.test.cjs && node tests/recording.test.cjs && node tests/offline.test.cjs && node --test tests/cloud-client.test.cjs && node --test tests/worker.test.mjs tests/backup.test.mjs tests/updates.test.mjs && TZ=Europe/London node --test tests/reminders.test.mjs",
+    "test": "TZ=Europe/London node tests/state.test.cjs && node tests/recording.test.cjs && node tests/offline.test.cjs && node --test tests/website.test.cjs && node --test tests/cloud-client.test.cjs && node --test tests/worker.test.mjs tests/backup.test.mjs tests/updates.test.mjs tests/thought.test.mjs && TZ=Europe/London node --test tests/reminders.test.mjs",
     "android:sync": "npm run build && cap sync android",
     "android:open": "cap open android"
   },

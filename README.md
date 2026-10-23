@@ -66,7 +66,7 @@ Website and app storage are separate. Export the JSON from website Settings, the
 - `npm ci`
 - `npm run android:sync`
 - Open `android/` in Android Studio 2025.2.1+ with Java 21 / Android SDK 36, or run `android/gradlew assembleRelease` from an appropriate Android environment.
-- GitHub Actions → **Build Android app** compiles an unsigned APK on pushes affecting app code. It does not receive signing credentials or AI secrets. Download the `meanwhile-unsigned-apk` artifact, then align/sign it with the retained private update key before installing. An unsigned artifact is not installable.
+- GitHub Actions → **Build Android app** compiles an unsigned APK when manually run. It does not receive signing credentials or AI secrets. Download the `meanwhile-unsigned-apk` artifact, then align/sign it with the retained private update key before installing. An unsigned artifact is not installable.
 
 A signed personal APK can be installed directly without a Play Store listing. Future updates must use the same app ID and signing key and a higher versionCode; keep the private update backup. Do not uninstall the app to update it, as that deletes its local data. APK builds embed a snapshot of the frontend: Cloudflare backend changes apply immediately, but frontend changes need a new app build.
 
@@ -89,3 +89,11 @@ The Android app checks the public `app-update.json` in this repository on launch
 Publish a new update only after compiling, signing with the existing private key, verifying its signature and incrementing versionCode. Commit the verified signed installer as `downloads/Meanwhile-VERSION.apk`, then publish `app-update.json` with appId `uk.co.nikkiradz.meanwhile`, platform `android`, version, integer build, SHA-256, short notes, and the matching raw.githubusercontent.com URL. Publish installer and manifest in one commit after the build is complete. The client accepts only this repository's exact HTTPS download path and offers only higher build numbers. Android verifies package signing when installing. Never publish a signing key, password, therapy notes, or an unsigned APK. The public installer contains app code only, no backend secrets or user data. A successful unsigned GitHub Actions build alone does not announce an update.
 
 Existing v0.4/v0.5 installations need to install v0.6 once to gain the updater. Future frontend changes still require a newly signed APK and published release metadata; the prompt does not hot-swap web assets.
+
+## Website-first design review
+
+The GitHub Pages website is the visual review surface. Android builds now run only via workflow_dispatch; UI edits do not publish an APK or change app-update.json. After reviewing the website, explicitly request an Android release, increment versionCode, build/sign/verify, then publish installer and feed together. The existing v0.6 installer remains unchanged during website review. Root native.bundle.js and app-updates.bundle.js mirror the public build output so branch-based GitHub Pages can load the same complete frontend. Rebuild and refresh these root bundles when changing their source.
+
+The dashboard and next-session page centre the current preparation summary; stale AI briefs fall back to current source notes. Settings place reminders/permissions first, followed by appearance, communication and profile. Accent colour is stored in notebook preferences (including exports and encrypted backup); hue wheel, saturation/value and presets adapt button/link contrast to both themes.
+
+Captured thoughts save locally before optional AI organisation. When connected with AI consent, the original thought text alone is sent to the thought organiser. Explicit next-session intent can add a linked agenda item; reflective thoughts appear in Reflections; uncertain items stay for later. Manual destination changes take precedence over an in-flight AI response. Moving a thought removes linked agenda copies and never deletes its original text. AI organisation is not psychological assessment and can be changed. Backend deployment is required for the new thought operation.

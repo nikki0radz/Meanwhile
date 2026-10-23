@@ -1,25 +1,6 @@
 name: Build Android app
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'android/**'
-      - 'native*'
-      - 'app-updates.js'
-      - 'update-policy.js'
-      - '*backup*'
-      - 'backup-crypto.js'
-      - 'reminder-plan.js'
-      - 'capacitor.config.json'
-      - 'app.js'
-      - 'ai.js'
-      - 'index.html'
-      - 'styles.css'
-      - 'questions.js'
-      - 'package*.json'
-      - 'scripts/build.cjs'
-      - '.github/workflows/android.yml'
 permissions:
   contents: read
 jobs:
