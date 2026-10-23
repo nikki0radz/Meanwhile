@@ -116,7 +116,7 @@
     }
     return known;
   }
-  function save() {
+  function persistReminder() {
     window.MeanwhileReminderModel.config();
     window.MeanwhileReminders.persist();
   }
@@ -203,7 +203,7 @@
       return;
     }
     const g = group, copy = { ...r };
-    save();
+    persistReminder();
     closeModal();
     render();
     toast("Reminder saved", window.MeanwhileNative?.native ? "Your phone reminder plan was updated." : "Saved for this website preview and the next app update.");
@@ -219,7 +219,6 @@
     edit("custom", null, { title: title.slice(0, 100), custom: title, ...options });
   }
   window.MeanwhileReminders = { persist: () => {
-    window.dispatchEvent;
     globalSave();
     window.MeanwhileNative?.sync();
   }, open(s) {
@@ -254,18 +253,18 @@
     if (r) {
       r.enabled = value;
       if (value) r.done = false;
-      save();
+      persistReminder();
       render();
     }
   }, remove(g, id2) {
     const c = config(), old = c[g].find((r) => r.id === id2);
     c[g] = c[g].filter((r) => r.id !== id2);
-    save();
+    persistReminder();
     render();
     showModal('<h2>Reminder removed</h2><p class="hint">Your notes have not changed.</p><div class="actions"><button id="undo-reminder" class="secondary">Undo</button><button class="primary" onclick="closeModal()">Done</button></div>');
     $("#undo-reminder").onclick = () => {
       config()[g].push(old);
-      save();
+      persistReminder();
       closeModal();
       render();
     };
@@ -273,23 +272,23 @@
     const r = config().custom.find((r2) => r2.id === id2);
     if (r) {
       r.done = !r.done;
-      save();
+      persistReminder();
       render();
     }
   }, snoozeLength(v) {
     config().snoozeMinutes = Number(v);
-    save();
+    persistReminder();
     render();
   }, fallback(k, v) {
     const f = config().fallback;
     f[k] = k === "days" ? Math.max(1, Math.min(30, Math.round(Number(v) || 1))) : v;
     if (["mode", "days", "time"].includes(k)) f.anchor = (/* @__PURE__ */ new Date()).toISOString();
-    save();
+    persistReminder();
     render();
   }, day(d) {
     const f = config().fallback;
     f.weekdays = f.weekdays.includes(d) ? f.weekdays.filter((x) => x !== d) : [...f.weekdays, d];
-    save();
+    persistReminder();
     render();
   }, forTask(id2, key) {
     const t = state.contexts[key]?.tasks.find((t2) => t2.id === id2);
@@ -306,7 +305,7 @@
     r.at = localMinute(new Date(Date.now() + config().snoozeMinutes * 6e4));
     r.enabled = true;
     r.done = false;
-    save();
+    persistReminder();
     render();
     toast("Reminder snoozed", when(r.at));
   }, snooze(n) {
@@ -317,7 +316,7 @@
       return;
     }
     config().custom.push({ ...fresh("custom"), title: n.title, custom: n.body, at: localMinute(at), discreet: e.discreet !== false, target: e.target || "prep", sessionKey: e.sessionKey || currentKey(), taskId: e.taskId || "" });
-    save();
+    persistReminder();
     toast("Reminder snoozed", when(at));
   }, openNotification(e) {
     if (e.target === "debrief") {

@@ -97,3 +97,11 @@ The GitHub Pages website is the visual review surface. Android builds now run on
 The dashboard and next-session page centre the current preparation summary; stale AI briefs fall back to current source notes. Settings place reminders/permissions first, followed by appearance, communication and profile. Accent colour is stored in notebook preferences (including exports and encrypted backup); hue wheel, saturation/value and presets adapt button/link contrast to both themes.
 
 Captured thoughts save locally before optional AI organisation. When connected with AI consent, the original thought text alone is sent to the thought organiser. Explicit next-session intent can add a linked agenda item; reflective thoughts appear in Reflections; uncertain items stay for later. Manual destination changes take precedence over an in-flight AI response. Moving a thought removes linked agenda copies and never deletes its original text. AI organisation is not psychological assessment and can be changed. Backend deployment is required for the new thought operation.
+
+### Editable reminders and guided debrief (website review)
+
+Settings now opens a compact menu with separate reminder, notification, appearance, AI, profile, backup and recording pages. Reminder settings supports multiple before-session and after-session rules, message previews, individual dated nudges, privacy per reminder, extra nudges and snooze. After-session times are measured from the appointment end. Existing reminder preferences migrate automatically.
+
+Fallback nudges apply only to unfinished preparation without an upcoming individual reminder. Choose weekdays, an interval, inactivity, or no fallback. A debrief can be saved as a draft and resumed; every question is optional. Original words, self-chosen preparation and individually chosen reminder dates are saved separately. AI reflection suggestions require an explicit request.
+
+This is a website review release. Phone scheduling and notification actions require a later Android release; the published v0.6 update manifest and APK are unchanged. The build also generates `reminders.bundle.js`; keep the root bundle updated for branch-based Pages hosting.
