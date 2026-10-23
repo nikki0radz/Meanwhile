@@ -1,0 +1,5 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
+const listeners={};let matched='',responsePromise;
+const ctx=vm.createContext({URL,Response,fetch:async()=>{throw Error('offline');},caches:{match:async url=>{matched=String(url);return new Response('offline shell');}},self:{location:{origin:'https://example.test'},registration:{scope:'https://example.test/Meanwhile/'},addEventListener:(name,fn)=>listeners[name]=fn}});
+vm.runInContext(fs.readFileSync(path.join(__dirname,'..','sw.js'),'utf8'),ctx);
+(async()=>{listeners.fetch({request:{method:'GET',url:'https://example.test/Meanwhile/',mode:'navigate'},respondWith:p=>responsePromise=p});assert.equal(await(await responsePromise).text(),'offline shell');assert.equal(matched,'https://example.test/Meanwhile/index.html');let handled=false;listeners.fetch({request:{method:'GET',url:'https://example.test/api/health',mode:'cors'},respondWith:()=>handled=true});assert.equal(handled,false);console.log('Passed: offline navigation resolves the correct scoped app shell; API responses bypass cache.');})().catch(e=>{console.error(e);process.exitCode=1;});
