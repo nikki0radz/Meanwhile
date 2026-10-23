@@ -8,7 +8,7 @@ Dashboard, next-session preparation and answers, talking points, reflection resp
 
 ## Live AI backend (v0.3)
 
-The repository now contains a Cloudflare Worker (`worker/index.js`) and real browser audio capture (`ai.js`). Notification previews are still previews: native Android notification delivery is the next packaging step.
+The repository now contains a Cloudflare Worker (`worker/index.js`) and real browser audio capture (`ai.js`). Browser notification previews remain previews; the Android package adds local phone notifications as described below.
 
 ### Cloudflare deployment
 1. Keep the existing Worker **meanwhile**, connected to this repository.
