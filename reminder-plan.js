@@ -1,8 +1,10 @@
+import {buildConfiguredReminderPlan} from './reminder-model.js';
 // Pure local-time planner. Each dated alarm is recalculated on edits/app resume.
 export const REMINDER_HORIZON_DAYS=56;
 const localTime=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 function notificationId(key){let hash=2166136261;for(const c of key)hash=Math.imul(hash^c.charCodeAt(0),16777619);return 10000+((hash>>>0)%2000000000);}
 export function buildReminderPlan(data,now=new Date()){
+ if(data.reminders?.config)return buildConfiguredReminderPlan(data,now);
  const r=data.reminders||{};if(!r.nativeEnabled)return [];
  const seed=new Date(data.appointment),duration=Number(data.duration);if(!Number.isFinite(seed.getTime())||!Number.isFinite(duration)||duration<10||duration>240)return [];
  const end=new Date(now);end.setDate(end.getDate()+REMINDER_HORIZON_DAYS);const plan=[];

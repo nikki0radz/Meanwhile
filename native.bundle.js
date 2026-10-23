@@ -287,8 +287,8 @@
           });
         }
       };
-      encode = (str) => encodeURIComponent(str).replace(/%(2[346B]|5E|60|7C)/g, decodeURIComponent).replace(/[()]/g, escape);
-      decode = (str) => str.replace(/(%[\dA-F]{2})+/gi, decodeURIComponent);
+      encode = (str2) => encodeURIComponent(str2).replace(/%(2[346B]|5E|60|7C)/g, decodeURIComponent).replace(/[()]/g, escape);
+      decode = (str2) => str2.replace(/(%[\dA-F]{2})+/gi, decodeURIComponent);
       CapacitorCookiesPluginWeb = class extends WebPlugin {
         async getCookies() {
           const cookies = document.cookie;
@@ -370,8 +370,8 @@
           let item;
           if (Array.isArray(value)) {
             item = "";
-            value.forEach((str) => {
-              encodedValue = shouldEncode ? encodeURIComponent(str) : str;
+            value.forEach((str2) => {
+              encodedValue = shouldEncode ? encodeURIComponent(str2) : str2;
               item += `${key}=${encodedValue}&`;
             });
             item.slice(0, -1);
@@ -629,8 +629,8 @@
           }
         }
         async removeDeliveredNotificationsById(options) {
-          for (const id of options.ids) {
-            const found = this.deliveredNotifications.find((n) => n.tag === String(id));
+          for (const id2 of options.ids) {
+            const found = this.deliveredNotifications.find((n) => n.tag === String(id2));
             found === null || found === void 0 ? void 0 : found.close();
             this.deliveredNotifications = this.deliveredNotifications.filter((n) => n !== found);
           }
@@ -642,7 +642,7 @@
           this.deliveredNotifications = [];
         }
         async getByIds(options) {
-          const ids = options.ids.map((id) => String(id));
+          const ids = options.ids.map((id2) => String(id2));
           const scheduled = this.pending.filter((n) => ids.includes(String(n.id)));
           const delivered = this.deliveredNotifications.filter((n) => ids.includes(n.tag)).map((n) => this.deliveredToSchema(n));
           return { notifications: [...scheduled, ...delivered] };
@@ -1470,9 +1470,9 @@
             uri: toPath
           };
         }
-        isBase64String(str) {
+        isBase64String(str2) {
           try {
-            return btoa(atob(str)) == str;
+            return btoa(atob(str2)) == str2;
           } catch (err) {
             return false;
           }
@@ -1612,21 +1612,127 @@
     web: () => Promise.resolve().then(() => (init_web5(), web_exports5)).then((m) => new m.ShareWeb())
   });
 
-  // reminder-plan.js
+  // reminder-model.js
   var REMINDER_HORIZON_DAYS = 56;
-  var localTime = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}T${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  var MAX_SCHEDULED_NOTIFICATIONS = 400;
+  var weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  var localMinute = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}T${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  var num = (v, min, max, f2) => Number.isFinite(Number(v)) ? Math.max(min, Math.min(max, Math.round(Number(v)))) : f2;
+  var str = (v, n = 1400) => typeof v === "string" ? v.slice(0, n) : "";
+  var id = (v, f2) => typeof v === "string" && /^[A-Za-z0-9:_-]{1,200}$/.test(v) ? v : f2;
   function notificationId(key) {
+    let h = 2166136261;
+    for (const c of key) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+    return 1e4 + (h >>> 0) % 2e9;
+  }
+  function normalizeReminderConfig(r = {}, now = /* @__PURE__ */ new Date()) {
+    const c = r.config || {}, f2 = c.fallback || {}, seen = /* @__PURE__ */ new Set();
+    const rows = (values, kind) => (values || []).slice(0, kind === "custom" ? 200 : 12).filter((x) => x && typeof x === "object").map((x, i) => {
+      let key = id(x.id, kind + "-" + i);
+      if (seen.has(key)) key = kind + "-" + i;
+      seen.add(key);
+      return { id: key, enabled: x.enabled !== false, done: !!x.done, minutes: num(x.minutes, 0, 10080, kind === "before" ? 30 : 0), content: ["appointment", "summary", "topics", "debrief", "preparation", "both", "custom"].includes(x.content) ? x.content : kind === "before" ? "appointment" : kind === "after" ? "debrief" : "custom", title: str(x.title, 100), custom: str(x.custom), discreet: x.discreet !== false, repeatCount: num(x.repeatCount, 0, 3, 0), repeatMinutes: num(x.repeatMinutes, 5, 240, 15), at: str(x.at, 30), target: ["prep", "reflections", "debrief"].includes(x.target) ? x.target : kind === "after" ? "debrief" : "prep", taskId: id(x.taskId, ""), sessionId: id(x.sessionId, ""), sessionKey: str(x.sessionKey, 30) };
+    });
+    return { version: 1, before: rows(Array.isArray(c.before) ? c.before : [{ id: "before-default", enabled: r.brief !== false, minutes: r.lead || 30, content: "topics", discreet: r.private !== false }], "before"), after: rows(Array.isArray(c.after) ? c.after : [{ id: "after-default", enabled: r.debrief !== false, minutes: 0, content: "debrief", discreet: r.private !== false }], "after"), custom: rows(Array.isArray(c.custom) ? c.custom : [], "custom"), snoozeMinutes: num(c.snoozeMinutes, 5, 240, 15), fallback: { mode: ["off", "weekly", "interval", "inactive"].includes(f2.mode) ? f2.mode : !r.config && r.practice ? "weekly" : "off", weekdays: (Array.isArray(f2.weekdays) ? f2.weekdays : !r.config ? r.practiceDays || [] : []).filter((x) => weekdays.includes(x)), days: num(f2.days, 1, 30, 3), time: /^([01]\d|2[0-3]):[0-5]\d$/.test(f2.time || "") ? f2.time : /^([01]\d|2[0-3]):[0-5]\d$/.test(r.practiceTime || "") ? r.practiceTime : "18:00", anchor: Number.isFinite(+new Date(f2.anchor)) ? f2.anchor : now.toISOString(), discreet: f2.discreet !== false, custom: str(f2.custom) } };
+  }
+  function reminderMessage(r, kind, data, key, at) {
+    if (r.discreet !== false) return { title: "A moment for yourself", body: "Your notes are ready when you are." };
+    const c = data.contexts?.[key] || {}, session = new Date(key), minutes = Number.isFinite(+session) ? Math.max(0, Math.round((session - at) / 6e4)) : 0;
+    const topics = (c.agenda || []).slice(0, 3).map((x) => x.text).join(" \u2022 "), preparation = (c.tasks || []).filter((x) => !x.done).slice(0, 3).map((x) => x.title).join(" \u2022 ");
+    const source = JSON.stringify({ prep: c.prep || "", tasks: c.tasks || [], agenda: c.agenda || [], thoughts: (c.thoughts || []).filter((t) => !t.destination || t.destination === "prep"), sections: c.sections || [] });
+    const summary = (c.aiBrief?.source === source ? c.aiBrief.text : "") || topics || preparation || c.prep || "Open your notes to see your preparation.";
+    const values = { minutes, summary, talking_points: topics || "Open your talking points.", preparation: preparation || "Open your chosen preparation.", date: Number.isFinite(+session) ? session.toLocaleDateString("en-GB") : "your next session", time: Number.isFinite(+session) ? session.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "" };
+    const custom = str(r.custom).replace(/\{(minutes|summary|talking_points|preparation|date|time)\}/g, (_, k) => String(values[k]));
+    let title = r.title || (kind === "prep" ? "Your therapy session" : kind === "debrief" ? "A moment after therapy" : "A thought to return to"), body;
+    if (kind === "prep") {
+      const timing = minutes ? `Your therapy appointment is in ${minutes} minutes.` : "Your therapy appointment is starting.";
+      body = r.content === "summary" ? timing + " " + summary : r.content === "topics" ? timing + " Don\u2019t forget: " + (topics || "open your talking points.") : r.content === "custom" ? custom : timing;
+    } else if (kind === "debrief") body = r.content === "preparation" ? "What would you like to prepare before next time?" : r.content === "both" ? "What stayed with you? Debrief your session, then choose what to prepare before next time." : r.content === "custom" ? custom : "What stayed with you? Capture a debrief while it is fresh.";
+    else body = custom || preparation || "Return to the preparation you chose. Open your notes when you are ready.";
+    return { title: title.slice(0, 100), body: body.slice(0, 1400) };
+  }
+  function buildConfiguredReminderPlan(data, now = /* @__PURE__ */ new Date()) {
+    if (!data.reminders?.nativeEnabled) return [];
+    const c = normalizeReminderConfig(data.reminders, now), end = new Date(now);
+    end.setDate(end.getDate() + REMINDER_HORIZON_DAYS);
+    const plan = [];
+    const add = (r, kind, at, key, group, base, limit) => {
+      if (!r.enabled || r.done || !Number.isFinite(+at)) return;
+      if (r.taskId) {
+        const task = Object.values(data.contexts || {}).flatMap((x) => x.tasks || []).find((t) => t.id === r.taskId);
+        if (!task || task.done) return;
+      }
+      for (let i = 0; i <= (r.repeatCount || 0); i++) {
+        const time = new Date(+at + i * (r.repeatMinutes || 15) * 6e4);
+        if (time <= now || time > end || limit && time >= limit) continue;
+        plan.push({ id: notificationId(`${group}:${r.id}:${base || +at}:${i}`), ...reminderMessage(r, kind, data, key, time), at: time, kind, sessionKey: key, ruleId: r.id, taskId: r.taskId || "", target: r.target || (kind === "debrief" ? "debrief" : "prep"), discreet: r.discreet !== false });
+      }
+    };
+    const seed = new Date(data.appointment), duration = Number(data.duration);
+    if (Number.isFinite(+seed) && duration >= 10 && duration <= 240) {
+      let session = new Date(seed);
+      if (data.weekly) {
+        session.setDate(seed.getDate() + Math.floor((now - seed) / (7 * 864e5)) * 7);
+        while (+session + duration * 6e4 + 10080 * 6e4 < +now) session.setDate(session.getDate() + 7);
+      }
+      let count = 0;
+      while (session <= end && count++ < 30) {
+        const key = localMinute(session);
+        for (const r of c.before) add(r, "prep", new Date(+session - r.minutes * 6e4), key, "before", +session, +session);
+        for (const r of c.after) add(r, "debrief", new Date(+session + (duration + r.minutes) * 6e4), key, "after", +session);
+        if (!data.weekly) break;
+        session.setDate(session.getDate() + 7);
+      }
+    }
+    for (const r of c.custom) add(r, "practice", new Date(r.at), r.sessionKey || data.currentKey, "custom");
+    const unplanned = (data.contexts?.[data.currentKey]?.tasks || []).filter((t) => !t.done && !c.custom.some((r) => r.enabled && !r.done && r.taskId === t.id && +new Date(r.at) + r.repeatCount * r.repeatMinutes * 6e4 > +now)), f2 = c.fallback;
+    if (unplanned.length && f2.mode !== "off") {
+      const [h, m] = f2.time.split(":").map(Number), r = { id: "fallback", enabled: true, discreet: f2.discreet, custom: f2.custom || unplanned.slice(0, 3).map((x) => x.title).join(" \u2022 "), content: "custom", target: "prep" };
+      let day;
+      if (f2.mode === "weekly") {
+        day = new Date(now);
+        day.setHours(h, m, 0, 0);
+        for (let i = 0; i <= REMINDER_HORIZON_DAYS; i++) {
+          if (f2.weekdays.includes(weekdays[day.getDay()])) add(r, "practice", new Date(day), data.currentKey, "fallback");
+          day.setDate(day.getDate() + 1);
+        }
+      } else {
+        const origin = new Date(f2.mode === "inactive" ? data.lastOpenedAt || now : f2.anchor);
+        day = new Date(origin);
+        day.setDate(day.getDate() + f2.days);
+        day.setHours(h, m, 0, 0);
+        if (f2.mode === "inactive" && day < new Date(+origin + f2.days * 864e5)) day.setDate(day.getDate() + 1);
+        let n = 0;
+        while (day <= end && n++ < 100) {
+          add(r, "practice", new Date(day), data.currentKey, "fallback");
+          day.setDate(day.getDate() + f2.days);
+        }
+      }
+    }
+    const seen = /* @__PURE__ */ new Set();
+    return plan.sort((a, b) => a.at - b.at).filter((x) => {
+      if (seen.has(x.id)) return false;
+      seen.add(x.id);
+      return true;
+    }).slice(0, MAX_SCHEDULED_NOTIFICATIONS);
+  }
+
+  // reminder-plan.js
+  var REMINDER_HORIZON_DAYS2 = 56;
+  var localTime = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}T${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  function notificationId2(key) {
     let hash = 2166136261;
     for (const c of key) hash = Math.imul(hash ^ c.charCodeAt(0), 16777619);
     return 1e4 + (hash >>> 0) % 2e9;
   }
   function buildReminderPlan(data, now = /* @__PURE__ */ new Date()) {
+    if (data.reminders?.config) return buildConfiguredReminderPlan(data, now);
     const r = data.reminders || {};
     if (!r.nativeEnabled) return [];
     const seed = new Date(data.appointment), duration = Number(data.duration);
     if (!Number.isFinite(seed.getTime()) || !Number.isFinite(duration) || duration < 10 || duration > 240) return [];
     const end = new Date(now);
-    end.setDate(end.getDate() + REMINDER_HORIZON_DAYS);
+    end.setDate(end.getDate() + REMINDER_HORIZON_DAYS2);
     const plan = [];
     const detail = (session) => {
       if (session && localTime(session) !== data.currentKey) return "Open your preparation and talking points for this session.";
@@ -1638,7 +1744,7 @@
       const discreet = r.private !== false;
       const title = discreet ? "A moment for yourself" : kind === "debrief" ? "A moment to debrief" : kind === "practice" ? "Pick up your chosen practice" : "Your session is coming up";
       const body = discreet ? "Your notes are ready when you are." : kind === "debrief" ? "What stayed with you? Debrief your session, then choose what to prepare before next time." : kind === "practice" ? "Return to the practice you chose. Open your notes to continue." : detail(session);
-      plan.push({ id: notificationId(kind + ":" + at.getTime()), title, body: body.slice(0, 1400), at, kind, sessionKey: session ? localTime(session) : data.currentKey, discreet });
+      plan.push({ id: notificationId2(kind + ":" + at.getTime()), title, body: body.slice(0, 1400), at, kind, sessionKey: session ? localTime(session) : data.currentKey, discreet });
     }
     let occurrence = new Date(seed);
     if (data.weekly) {
@@ -1653,15 +1759,15 @@
       if (!data.weekly) break;
       occurrence.setDate(occurrence.getDate() + 7);
     }
-    const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const weekdays2 = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     if (r.practice) {
       const [h, m] = String(r.practiceTime || "18:00").split(":").map(Number);
       if (Number.isInteger(h) && h >= 0 && h <= 23 && Number.isInteger(m) && m >= 0 && m <= 59) {
         const day = new Date(now);
         day.setHours(h, m, 0, 0);
-        for (let i = 0; i <= REMINDER_HORIZON_DAYS; i++) {
+        for (let i = 0; i <= REMINDER_HORIZON_DAYS2; i++) {
           const withinTherapy = data.weekly || day <= seed;
-          if (withinTherapy && (r.practiceDays || []).includes(weekdays[day.getDay()])) {
+          if (withinTherapy && (r.practiceDays || []).includes(weekdays2[day.getDay()])) {
             const next = new Date(seed);
             if (data.weekly) {
               const weeks = Math.floor((day - next) / (7 * 864e5));
@@ -1700,6 +1806,7 @@
     return bridge?.snapshot();
   }
   async function channels() {
+    await LocalNotifications.registerActionTypes({ types: [{ id: "meanwhile-reminder", actions: [{ id: "snooze", title: "Snooze" }, { id: "open", title: "Open notes" }] }] });
     await LocalNotifications.createChannel({ id: "meanwhile-private", name: "Discreet reminders", description: "Gentle reminders with private text.", importance: 4, visibility: 0 });
     await LocalNotifications.createChannel({ id: "meanwhile-detailed", name: "Detailed reminders", description: "Reminders containing your chosen talking points.", importance: 4, visibility: 1 });
   }
@@ -1720,7 +1827,7 @@
     try {
       await permissions();
       const data = snapshot(), r = data.reminders || {};
-      const fingerprint = JSON.stringify({ appointment: data.appointment, duration: data.duration, weekly: data.weekly, reminders: r, currentKey: data.currentKey, context: data.contexts?.[data.currentKey], zone: Intl.DateTimeFormat().resolvedOptions().timeZone, offset: (/* @__PURE__ */ new Date()).getTimezoneOffset() });
+      const fingerprint = JSON.stringify({ appointment: data.appointment, duration: data.duration, weekly: data.weekly, reminders: r, currentKey: data.currentKey, contexts: data.contexts, lastOpenedAt: data.lastOpenedAt, zone: Intl.DateTimeFormat().resolvedOptions().timeZone, offset: (/* @__PURE__ */ new Date()).getTimezoneOffset() });
       if (!force && fingerprint === lastFingerprint && lastExact === status.exact) return;
       const existing = (await LocalNotifications.getPending()).notifications.filter((n) => n.id !== TEST_ID);
       if (!r.nativeEnabled || status.display !== "granted") {
@@ -1734,7 +1841,7 @@
       }
       await channels();
       const plan = buildReminderPlan(data);
-      const notifications = plan.map((p) => ({ id: p.id, title: p.title, body: p.body, largeBody: p.body, channelId: p.discreet ? "meanwhile-private" : "meanwhile-detailed", smallIcon: "ic_stat_meanwhile", iconColor: "#695483", schedule: { at: p.at, allowWhileIdle: true }, isExactNotification: status.exact === "granted", extra: { kind: p.kind, sessionKey: p.sessionKey } }));
+      const notifications = plan.map((p) => ({ id: p.id, title: p.title, body: p.body, largeBody: p.body, channelId: p.discreet ? "meanwhile-private" : "meanwhile-detailed", smallIcon: "ic_stat_meanwhile", iconColor: "#695483", actionTypeId: "meanwhile-reminder", schedule: { at: p.at, allowWhileIdle: true }, isExactNotification: status.exact === "granted", extra: { kind: p.kind, sessionKey: p.sessionKey, ruleId: p.ruleId, taskId: p.taskId, target: p.target, discreet: p.discreet } }));
       const desired = new Set(plan.map((n) => n.id));
       if (notifications.length) await LocalNotifications.schedule({ notifications });
       const stale = existing.filter((n) => !desired.has(n.id));
@@ -1823,7 +1930,10 @@
     } finally {
       restoring = false;
     }
-    await LocalNotifications.addListener("localNotificationActionPerformed", (event) => bridge.openReminder(event.notification.extra || {}));
+    await LocalNotifications.addListener("localNotificationActionPerformed", (event) => {
+      if (event.actionId === "snooze") bridge.snooze?.(event.notification);
+      else bridge.openReminder(event.notification.extra || {});
+    });
     await App.addListener("appStateChange", async ({ isActive }) => {
       if (isActive) {
         window.dispatchEvent(new CustomEvent("meanwhile:resume"));
@@ -1859,7 +1969,7 @@
       bridge?.notify("Phone setting could not be updated", status.error);
     }
   }
-  window.MeanwhileNative = { native, getInfo: () => App.getInfo(), status: () => ({ ...status }), horizon: REMINDER_HORIZON_DAYS, shareFile, init: (adapter) => safe(() => init(adapter)), enable: () => safe(enable), disable: () => safe(disable), exact: () => safe(exact), test: () => safe(test), sync: () => safe(() => sync(true)) };
+  window.MeanwhileNative = { native, getInfo: () => App.getInfo(), status: () => ({ ...status }), horizon: REMINDER_HORIZON_DAYS2, shareFile, init: (adapter) => safe(() => init(adapter)), enable: () => safe(enable), disable: () => safe(disable), exact: () => safe(exact), test: () => safe(test), sync: () => safe(() => sync(true)) };
 })();
 /*! Bundled license information:
 
