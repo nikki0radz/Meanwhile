@@ -105,3 +105,9 @@ Settings now opens a compact menu with separate reminder, notification, appearan
 Fallback nudges apply only to unfinished preparation without an upcoming individual reminder. Choose weekdays, an interval, inactivity, or no fallback. A debrief can be saved as a draft and resumed; every question is optional. Original words, self-chosen preparation and individually chosen reminder dates are saved separately. AI reflection suggestions require an explicit request.
 
 This is a website review release. Phone scheduling and notification actions require a later Android release; the published v0.6 update manifest and APK are unchanged. The build also generates `reminders.bundle.js`; keep the root bundle updated for branch-based Pages hosting.
+
+## Android v0.7.0
+
+Build 7 brings the website review changes into Android: editable reminder rules and notification messages, individual dates, fallback nudges and snooze, optional guided debriefs, voice-first answer controls, separate settings pages, accent customization and the centered dashboard. Declaring MODIFY_AUDIO_SETTINGS alongside RECORD_AUDIO fixes the missing permission checked by the Capacitor WebView recording bridge. Recording errors now distinguish Android settings from browser site settings.
+
+The signed installer must match the v0.6 signing certificate and install as an update. Automated checks cover state migration, recordings, debriefs, reminder planning and backup behavior; actual microphone recording, scheduled notifications and snooze should also be checked on the phone after installation.
