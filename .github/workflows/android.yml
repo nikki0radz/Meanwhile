@@ -1,5 +1,8 @@
 name: Build Android app
 on:
+  push:
+    branches: [main]
+    paths: ['*.js', '*.css', 'index.html', 'package*.json', 'android/**', 'tests/**', '.github/workflows/android.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -31,9 +34,14 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon assembleRelease
+      - name: Include APK signature verification tool
+        run: cp "$ANDROID_HOME/build-tools/36.0.0/lib/apksigner.jar" android/app/build/outputs/apk/release/apksigner.jar
       - uses: actions/upload-artifact@v4
         with:
           name: meanwhile-unsigned-apk
-          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
+          path: |
+            android/app/build/outputs/apk/release/app-release-unsigned.apk
+            android/app/build/outputs/apk/release/apksigner.jar
           retention-days: 7
           if-no-files-found: error
+

@@ -1806,7 +1806,7 @@
     return bridge?.snapshot();
   }
   async function channels() {
-    await LocalNotifications.registerActionTypes({ types: [{ id: "meanwhile-reminder", actions: [{ id: "snooze", title: "Snooze" }, { id: "open", title: "Open notes" }] }] });
+    await LocalNotifications.registerActionTypes({ types: [{ id: "meanwhile-reminder", actions: [{ id: "snooze", title: "Snooze" }, { id: "tomorrow", title: "Remind me tomorrow" }, { id: "open", title: "Open notes" }] }] });
     await LocalNotifications.createChannel({ id: "meanwhile-private", name: "Discreet reminders", description: "Gentle reminders with private text.", importance: 4, visibility: 0 });
     await LocalNotifications.createChannel({ id: "meanwhile-detailed", name: "Detailed reminders", description: "Reminders containing your chosen talking points.", importance: 4, visibility: 1 });
   }
@@ -1931,7 +1931,7 @@
       restoring = false;
     }
     await LocalNotifications.addListener("localNotificationActionPerformed", (event) => {
-      if (event.actionId === "snooze") bridge.snooze?.(event.notification);
+      if (event.actionId === "snooze" || event.actionId === "tomorrow") bridge.snooze?.({ ...event.notification, snoozeTomorrow: event.actionId === "tomorrow" });
       else bridge.openReminder(event.notification.extra || {});
     });
     await App.addListener("appStateChange", async ({ isActive }) => {
@@ -1976,3 +1976,4 @@
 @capacitor/core/dist/index.js:
   (*! Capacitor: https://capacitorjs.com/ - MIT License *)
 */
+
